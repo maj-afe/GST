@@ -1,4 +1,5 @@
 pharma-local/.git/
+pharma-local/.local-deps/
 **/node_modules/
 **/venv/
 **/.venv/
