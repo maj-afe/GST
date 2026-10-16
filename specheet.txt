@@ -1,0 +1,121 @@
+SECTION 15: THE "VIBE CODING" PROMPT LIBRARY
+This is your secret weapon. Do not ask the AI to "build a pharmacy app." Feed it these exact, structured prompts one by one. Use Cursor (Composer mode) or ChatGPT.
+
+Prompt 1: Project Initialization
+"Act as a Senior Rust and React Developer. Initialize a new Tauri v2 desktop application called 'PharmaLocal'. Use React (TypeScript) with Vite for the frontend. Use TailwindCSS for styling and Shadcn/ui for components. Configure the Rust backend to use SQLx with SQLite. Set up the folder structure exactly as defined in Section 2.2 of my PRD. Do not write any business logic yet, just the boilerplate and configuration."
+
+Prompt 2: Database Schema & Migrations
+"Create the SQLx migrations for the SQLite database based on the schema defined in Section 3 of my PRD. Create the following tables: items, batches, customers, suppliers, sales_invoices, sales_items, purchases, purchase_items, sync_outbox, audit_logs, users, roles. Include all primary keys, foreign keys, and indexes. Write the SQL for the up.sql and down.sql migrations."
+
+Prompt 3: The Billing UI (Frontend)
+"Create a React component called BillingTerminal.tsx. It must use a 3-column CSS Grid layout as defined in Section 7.4.
+Column 1: Customer search and details.
+Column 2: A virtualized data table for the cart.
+Column 3: Totals and action buttons.
+Use Zustand to create a useCartStore that manages multi-tab billing. Implement the keyboard shortcuts (F2, F4, F9, Esc) defined in Section 4.1. Ensure the UI updates optimistically."
+
+Prompt 4: The Outbox Pattern (Backend)
+"Write the Rust logic for the 'Outbox Pattern' defined in Section 5.1.
+Create a sync_worker.rs file.
+Spawn a tokio background task that runs every 30 seconds.
+It must query the sync_outbox table for records with status = 'PENDING'.
+If the internet is available, it should process the task based on action_type.
+On success, update status to SUCCESS. On failure, increment retry_count and update error_log.
+Expose a Tauri command process_outbox_now() so the frontend can trigger it manually."
+
+Prompt 5: GST & Tally Integration Logic
+"Write a Rust module called integrations.rs.
+
+Create a function generate_e_invoice_json(invoice_id: Uuid) -> String that queries the local DB and constructs the NIC e-invoice JSON payload exactly as defined in Section 10.1.
+
+Create a function push_to_tally(invoice_id: Uuid) -> Result<()> that generates Tally-compliant XML and POSTs it to http://localhost:9000 as defined in Section 10.3."
+
+Prompt 6: AI & Analytics SQL Queries
+"Write the SQLx queries for the Analytics Engine defined in Section 11.
+
+get_fsn_analysis(): Returns items categorized as Fast, Slow, or Non-Moving based on sales in the last 90 days.
+
+get_gross_margin_report(): Calculates the profit per item and margin percentage.
+
+get_expiry_alerts(): Returns all batches expiring in the next 90 days with stock > 0.
+Expose these as Tauri commands to the React frontend."
+
+Prompt 7: Hardware Printing (ESC/POS)
+"Create a Rust module called printer.rs.
+Use the escpos crate.
+Write a function print_thermal_receipt(invoice_id: Uuid).
+It must fetch the invoice and items from the DB.
+Format the receipt with the pharmacy name centered, bold text for the total, and a QR code at the bottom.
+Send the raw ESC/POS commands directly to the USB/Serial port. Do not use the Windows print spooler."
+---
+
+# THE OFFLINE-FIRST PHARMA ERP: MEGA-DATASHEET & PRD
+*Version 1.0 | Target Platform: Windows/Linux Desktop (Tauri) | Purpose: Vibe Coding Blueprint*
+
+## SECTION 13: INSTALLATION, DEPLOYMENT & AUTO-UPDATER STRATEGY
+
+*Pharmacies do not have IT departments. Installation must be a "Next -> Next -> Finish" experience. The application must install itself, configure itself, and update itself silently.*
+
+### 13.1 The Installer (Tauri Bundler)
+*   **Output Format:** A single `.msi` (Windows Installer) or `.exe` (NSIS) file.
+*   **Bundled Dependencies:** The installer must bundle:
+    *   The React frontend (compiled HTML/JS/CSS).
+    *   The Rust backend (compiled binary).
+    *   A local SQLite database engine (or PostgreSQL if multi-PC).
+    *   **WebView2 Runtime:** Tauri requires WebView2. The installer must check if it exists and install it silently if it doesn't. (This is standard for modern Windows apps).
+*   **Install Location:** `C:\Program Files\PharmaLocal` (Requires Admin privileges for the first install).
+
+### 13.2 First-Run Experience (The Setup Wizard)
+When the app is launched for the first time, it must not show the dashboard. It must show a 5-step wizard:
+1.  **Store Details:** Input Pharmacy Name, Address, GSTIN, Drug License Number, Phone. (This auto-populates invoice headers).
+2.  **Admin User Creation:** Create the first user (Owner/Admin). Set a strong password. This password encrypts the local database.
+3.  **Hardware Setup:**
+    *   *Printer:* Dropdown to select the thermal printer (e.g., "TVS RP 3160"). Button to "Print Test Bill".
+    *   *Scanner:* Instructions to plug in the USB scanner. A test input box to scan a barcode and verify it registers.
+4.  **GST & Compliance Setup:** Select default tax rates (e.g., 5%, 12%, 18% for different drug categories). Input GST API credentials (if using e-invoicing).
+5.  **Data Import (Migration):** If the user is migrating from an old software (like Pharma 2007), provide a CSV/Excel template to import their existing `items`, `customers`, and `batches`.
+
+### 13.3 The Auto-Updater (Tauri Updater Plugin)
+*   **The Problem:** You release a bug fix. You can't drive to 500 pharmacies to update their software.
+*   **The Solution:**
+    *   Host a `latest.json` file on a remote server (e.g., GitHub Releases, AWS S3, or your own VPS).
+    *   The JSON contains the version number, release notes, and the signed download URL.
+    *   The Rust backend checks this JSON every time the app starts (or every 24 hours).
+    *   If a new version is found, it downloads the update in the background.
+    *   A small toast appears: *"Update ready. Restart to apply."*
+    *   **Security:** The update package **must be code-signed**. The Rust backend verifies the signature before installing to prevent man-in-the-middle attacks.
+*   **Offline Handling:** If the pharmacy has no internet, the update check fails silently. The app continues to work perfectly on the old version.
+
+---
+
+## SECTION 14: TESTING & QUALITY ASSURANCE (QA) STRATEGY
+
+*Vibe coding without testing creates a house of cards. You must enforce a testing culture.*
+
+### 14.1 Unit Testing
+*   **Frontend (React):** Use `Vitest` and `React Testing Library`.
+    *   Test the `useCartStore` (Zustand): Ensure adding an item, applying a discount, and calculating GST works mathematically.
+    *   Test the `useDatabase` hook: Mock the Tauri `invoke` function to ensure the UI handles database responses correctly.
+*   **Backend (Rust):** Use `cargo test`.
+    *   Test the tax calculation engine (CGST/SGST/IGST).
+    *   Test the FEFO (First Expiry First Out) batch selection algorithm.
+    *   Test the SQL queries against an in-memory SQLite database.
+
+### 14.2 Integration Testing
+*   Use `Playwright` to automate the UI.
+*   **Test Scenario:** Open app -> Search item -> Add to cart -> Apply discount -> Checkout -> Print. Verify the database was updated.
+*   **Hardware Mocking:** Create a "Virtual Printer" class in Rust that writes ESC/POS commands to a text file instead of a physical port. This allows you to test invoice layouts without wasting paper.
+
+### 14.3 Offline Mode Simulation (The "Airplane Mode" Test)
+*   This is the most critical test for this specific architecture.
+*   **How to test:**
+    1.  Disconnect the internet.
+    2.  Generate 10 invoices.
+    3.  Attempt to send WhatsApp messages and e-invoices.
+    4.  Verify the UI does *not* freeze or crash.
+    5.  Verify the `sync_outbox` table has 10 pending `SEND_WHATSAPP` and 10 pending `GENERATE_E_INVOICE` records.
+    6.  Reconnect the internet.
+    7.  Verify the background worker processes the queue and updates the status to `SUCCESS`.
+*   **Tools:** Use `Clumsy` (Windows) or `Network Link Conditioner` to simulate packet loss and high latency.
+
+---
