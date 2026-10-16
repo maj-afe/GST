@@ -1,0 +1,3 @@
+[submodule "pharma-local"]
+	path = pharma-local
+	url = ./pharma-local
