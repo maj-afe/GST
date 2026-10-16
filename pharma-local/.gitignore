@@ -1,0 +1,12 @@
+pharma-local/.git/
+**/node_modules/
+**/venv/
+**/.venv/
+**/dist/
+**/build/
+**/.next/
+**/*.pyc
+**/__pycache__/
+node_modules/
+src-tauri/target/
+src-tauri/.local-deps/

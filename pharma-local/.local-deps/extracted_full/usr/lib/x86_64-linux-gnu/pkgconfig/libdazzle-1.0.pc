@@ -1,0 +1,10 @@
+prefix=/usr
+libdir=${prefix}/lib/x86_64-linux-gnu
+includedir=${prefix}/include
+
+Name: Dazzle
+Description: Razzle Dazzle for Gtk+ 3.x applications
+Version: 3.44.0
+Requires: gtk+-3.0
+Libs: -L${libdir} -ldazzle-1.0
+Cflags: -I${includedir}/libdazzle-1.0

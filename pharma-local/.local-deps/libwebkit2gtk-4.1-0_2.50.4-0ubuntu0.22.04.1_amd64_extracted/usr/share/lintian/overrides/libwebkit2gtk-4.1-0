@@ -1,0 +1,1 @@
+libwebkit2gtk-4.1-0: library-not-linked-against-libc [usr/lib/*/webkit2gtk-4.1/injected-bundle/libwebkit2gtkinjectedbundle.so]

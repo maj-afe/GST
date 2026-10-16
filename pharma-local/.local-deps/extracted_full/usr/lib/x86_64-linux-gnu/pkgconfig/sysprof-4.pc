@@ -1,0 +1,14 @@
+prefix=/usr
+libdir=${prefix}/lib/x86_64-linux-gnu
+includedir=${prefix}/include
+
+datadir=${prefix}/share
+
+Name: sysprof-4
+Description: The library for console applications embedding sysprof
+Version: 3.44.0
+Requires: gio-2.0 >=  2.67.4
+Requires.private: gio-unix-2.0 >=  2.67.4, json-glib-1.0, polkit-gobject-1 >=  0.105
+Libs: -L${prefix}/lib/x86_64-linux-gnu -lsysprof-4
+Libs.private: -lstdc++ -pthread
+Cflags: -I${includedir}/sysprof-4
